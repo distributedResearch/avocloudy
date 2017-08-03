@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<aut:automator
+	xmlns:aut="http://dsg.ce.unipr.it/software/deus/schema/automator"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://dsg.ce.unipr.it/software/deus/schema/automator ../../schema/automator.xsd ">
+
+<!-- 1 VT = 1 ms -> 1000 = 1 sec  max vt Virtual Time: 3.34E7 - 3.35E7 -> 1VT=10ms-> 100VT=1sec -->
+	<!-- *** EVENTS *** -->
+
+	<aut:event id="logVirtualTime" handler="it.unipr.ce.dsg.deus.impl.event.LogVirtualTimeEvent" /> 
+	<aut:event id="logPhysicalNode" handler="it.imtlucca.cloudyscience.log.PhysicalNodeLog" />
+	<aut:event id="logIaasDcNode" handler="it.imtlucca.cloudyscience.log.IaasDataCenterNodeLog" />
+	<aut:event id="logIaasNode" handler="it.imtlucca.cloudyscience.log.IaasNodeLog" />
+	<aut:event id="logACaasNode" handler="it.imtlucca.cloudyscience.log.AcaasNodeLog" />
+	<aut:event id="logAntACaasNode" handler="it.imtlucca.aco.log.AcoAcaasNodeLog" />
+	<aut:event id="logAppNode" handler="it.imtlucca.cloudyscience.log.AppNodeLog" />
+	<aut:event id="logCloudNetwork" handler="it.imtlucca.cloudyscience.log.LogCloudyScienceForPajek" />
+	<aut:event id="logAcoCloudNetwork" handler="it.imtlucca.aco.log.LogAcoForPajek" />
+
+	<aut:event id="birth" handler="it.imtlucca.spatialaco.VolunteerSpatialAcoNodeBirthEvent" schedulerListener="it.imtlucca.aco.VolunteerAcoNodeBirthSchedulerListener" oneShot="false">
+		<!-- events scheduled together with the birth event -->
+		<aut:events>
+		<!--	<aut:reference id="join" />
+			<aut:reference id="disconnect" /> 
+			<aut:reference id="death" />  
+			<aut:reference id="reconnection" />-->
+			
+			<aut:reference id="periodicPulse" />
+		</aut:events>
+	</aut:event>
+	
+	<aut:event id="birthDC" handler="it.imtlucca.cloudyscience.DataCenterNodeBirthEvent" schedulerListener="it.imtlucca.aco.DataCenterAcoNodeBirthSchedulerListener" oneShot="false">
+		<!-- events scheduled together with the birth event -->
+		<aut:events>
+		<!--	<aut:reference id="join" />
+		
+			<aut:reference id="disconnect" /> 
+			<aut:reference id="death" />  
+			<aut:reference id="reconnection" />-->
+			
+			<aut:reference id="checkStartup" />
+			
+			<aut:reference id="periodicPulse" />
+		</aut:events>
+	</aut:event>
+
+	<aut:event id="checkStartup" handler="it.imtlucca.spatialaco.infrastructureLayer.dc.DataCenterSpatialAcoNodeStartupCheckEvent" oneShot="false">
+		<aut:params>
+			<aut:param name="hasSameAssociatedNode" value="true" />
+		</aut:params>
+	</aut:event>
+	
+
+	<aut:event id="periodicPulse" handler="it.imtlucca.spatialaco.PeriodicPulseEvent" >
+		<aut:params>
+			<aut:param name="hasSameAssociatedNode" value="true" />
+			
+			<aut:param name="initPheromoneMemory" value="1" />
+			<aut:param name="initPheromoneCpuCore" value="1" />
+			<aut:param name="initPheromoneCpuFreq" value="1" />
+			<aut:param name="initPheromoneFinishingTime" value="1" />
+			<aut:param name="pheromone_a" value="0" />
+			<aut:param name="pheromone_b" value="1" />
+			<aut:param name="pheromone_c" value="2" />
+			<aut:param name="ant" value="line" /> <!--const(a), line(a,b), exp(a,b,c) -->
+			<aut:param name="pheromoneAging_a" value="1" />
+			<aut:param name="pheromoneAging_b" value="-0.2" />
+			<aut:param name="pheromoneAging_c" value="2" /> 
+			<aut:param name="agingFunc" value="line" />
+			<aut:param name="temperature_a" value="1" />
+			<aut:param name="temperatureFunc" value="const" />
+		</aut:params>
+	</aut:event>
+
+	
+	<!--insert the related process to use these option-->
+
+	<aut:event id="createAppSmall" handler="it.imtlucca.cloudyscience.applicationLayer.AppBirthEvent" />
+	<aut:event id="createAppLarge" handler="it.imtlucca.cloudyscience.applicationLayer.AppBirthEvent" />
+	
+	<aut:event id="sendAppForExec" handler="it.imtlucca.cloudyscience.autonomicLayer.SendTaskToExec" />
+	<aut:event id="executionEnd" handler="it.imtlucca.cloudyscience.infrastructureLayer.ExecutionEndEvent" />
+	
+	<!-- *** NODE SPECIES *** -->
+
+	<aut:node id="scienceNode" handler="it.imtlucca.aco.AcoVolunteerNode">
+		<aut:logger level="FINE" />
+		<aut:params>
+			<aut:param name="typeOfDevice" value="volunteer" />
+			<aut:param name="minPhysCore" value="1" />
+			<aut:param name="maxPhysCore" value="6" />
+			<aut:param name="minPhysCoreFreq" value="1" />
+			<aut:param name="maxPhysCoreFreq" value="2" />
+			<aut:param name="minPhysRAM" value="128" />
+			<aut:param name="maxPhysRAM" value="2048" />
+			<aut:param name="lanName" value="asZone" /> <!-- asZone (it can override the random ZoneAssignment) or int values --> 
+			<aut:param name="connection" value="WiFiG" />
+		<!--	<aut:param name="unit" value="usec" /> -->
+			<!-- *** VIRTUAL LAYER *** -->
+			<aut:param name="resourceToVM" value="100" />
+	<!--		<aut:param name="vmResizable" value="true" />-->
+			
+			<aut:param name="zoneAssignment" value="random" />
+			<aut:param name="nOfRegionalZone" value="10" />
+			<aut:param name="connectToNSupernode" value="all" /> <!--100-->
+			<aut:param name="connectionCriteriaInit" value="random" /> <!-- TODO:other strategies and use of flags -->
+			<aut:param name="nConnectionInit" value="30" /> <!-- 5-->
+			<aut:param name="nConnectionOngoing" value="all" /> <!-- 5-->
+			<aut:param name="connectionAmongZonesInit" value="false" />
+			<aut:param name="connectionAmongZonesOngoing" value="false" />
+			<aut:param name="overheadForRemoteSite" value="144000" /><!--NO MORE USED	-->
+			<aut:param name="stabilityFactor" value="100"/> <!--optional parameter from 100 always on to 0 it will go down after each death or disconnection-->
+			
+			<!-- *** AUTONOMIC COMPUTING LAYER *** -->
+			<aut:param name="partialVolunteer" value="true" />
+			<aut:param name="missRateTolerance" value="1.0" />
+			<aut:param name="askToVolunteer" value="true" />
+			<aut:param name="maxNumOfAttempts" value="max" />
+			
+				<!-- * ACO on demand * -->
+			<aut:param name="antTtl" value="3" />
+			<aut:param name="antTimeOut" value="100" />		
+			<aut:param name="numOfAnts" value="3" />
+			<aut:param name="evaporation" value="0.0001" />
+			<aut:param name="initPheromone" value="1" />
+			
+			<aut:param name="pheromoneToDeposit_a" value="1" />
+			<aut:param name="pheromoneToDeposit_b" value="-1" />
+			<aut:param name="pheromoneToDeposit_c" value="2" />
+			<aut:param name="agingFunc" value="const" /> <!--const(a), line(a,b), exp(a,b,c) -->
+			
+			<aut:param name="weightAntCpuCore" value="1" />
+			<aut:param name="weightAntCpuFreq" value="1" />
+			<aut:param name="weightAntMainMemory" value="1" />
+			
+			<aut:param name="resourceWeight" value="1" />
+			<aut:param name="finishingTimeWeight" value="1" />
+			<aut:param name="pheromoneWeight" value="1" />
+			<aut:param name="linkQtWeight" value="1" />
+			
+			<aut:param name="temperature_a" value="2147483647" /> <!-- 1-->
+			<aut:param name="temperatureFunc" value="const" />
+		</aut:params>
+	</aut:node>
+	
+	<aut:node id="scienceDataCenter" handler="it.imtlucca.aco.AcoDataCenterNode">
+		<aut:logger level="FINE" />
+		<aut:params>
+			<aut:param name="typeOfDevice" value="datacenter" />
+			<aut:param name="minPhysCore" value="2" />
+			<aut:param name="maxPhysCore" value="32" />
+			<aut:param name="minPhysCoreFreq" value="1" />
+			<aut:param name="maxPhysCoreFreq" value="3" />
+			<aut:param name="minPhysRAM" value="2048" />
+			<aut:param name="maxPhysRAM" value="65536" />
+			<aut:param name="lanName" value="asZone" /> <!-- asZone (it can override the random ZoneAssignment) or int values --> 
+			<aut:param name="connection" value="10GLan" />
+		<!--	<aut:param name="unit" value="usec" /> -->
+					<!-- *** IaaS LAYER DC *** -->
+			<aut:param name="rateResourceToVMStartup" value="1.0" /> <!--0.2-->
+			<aut:param name="rateResourceToVMResize" value="1.0" /> <!-- 0.1-->
+			<aut:param name="createResizableVM" value="true" />
+			<aut:param name="triggerUtilizationToStart" value="0.8" />
+			<aut:param name="triggerUtilizationToShutdown" value="0.0" />
+			<aut:param name="triggerUtilizationToResize" value="0.6" />
+		
+			<!-- *** VIRTUAL LAYER *** -->
+			<aut:param name="resourceToVM" value="100" />
+	<!--		<aut:param name="vmResizable" value="true" />-->
+			
+			<aut:param name="zoneAssignment" value="random" />
+			<aut:param name="nOfRegionalZone" value="10" />
+			<aut:param name="connectToNSupernode" value="all" /> <!--100-->
+			<aut:param name="connectionCriteriaInit" value="random" /> <!-- TODO:other strategies and use of flags -->
+			<aut:param name="nConnectionInit" value="30" /> <!-- 5-->
+			<aut:param name="nConnectionOngoing" value="all" /> <!-- 5-->
+			<aut:param name="connectionAmongZonesInit" value="false" />
+			<aut:param name="connectionAmongZonesOngoing" value="false" />
+			<aut:param name="overheadForRemoteSite" value="144000" /><!--NO MORE USED	-->
+			<aut:param name="stabilityFactor" value="100"/> <!--optional parameter from 100 always on to 0 it will go down after each death or disconnection-->
+			
+			<!-- *** AUTONOMIC COMPUTING LAYER *** -->
+			<aut:param name="partialVolunteer" value="true" />
+			<aut:param name="missRateTolerance" value="1.0" />
+			<aut:param name="askToVolunteer" value="true" />
+			<aut:param name="maxNumOfAttempts" value="max" />
+			
+				<!-- * ACO on demand * -->
+			<aut:param name="antTtl" value="3" />
+			<aut:param name="antTimeOut" value="100" />		
+			<aut:param name="numOfAnts" value="3" />
+			<aut:param name="evaporation" value="0.0001" />
+			<aut:param name="initPheromone" value="1" />
+			
+			<aut:param name="pheromoneToDeposit_a" value="1" />
+			<aut:param name="pheromoneToDeposit_b" value="-1" />
+			<aut:param name="pheromoneToDeposit_c" value="2" />
+			<aut:param name="agingFunc" value="const" /> <!--const(a), line(a,b), exp(a,b,c) -->
+			
+			<aut:param name="weightAntCpuCore" value="1" />
+			<aut:param name="weightAntCpuFreq" value="1" />
+			<aut:param name="weightAntMainMemory" value="1" />
+			
+			<aut:param name="resourceWeight" value="1" />
+			<aut:param name="finishingTimeWeight" value="1" />
+			<aut:param name="pheromoneWeight" value="1" />
+			<aut:param name="linkQtWeight" value="1" />
+			
+			<aut:param name="temperature_a" value="2147483647" /> <!--1 -->
+			<aut:param name="temperatureFunc" value="const" />
+		</aut:params>
+	</aut:node>
+	
+
+			<!-- *** APPLICATION LAYER *** -->
+	<aut:node id="applicationSmall" handler="it.imtlucca.cloudyscience.applicationLayer.Application">
+		<aut:logger level="FINE" />
+		<aut:params>
+			<aut:param name="minDeadlineOffsetToDuration" value="0.2" /><!--no  -->
+			<aut:param name="maxDeadlineOffsetToDuration" value="0.2" />
+			<aut:param name="taskMinDegreeOfParallelism" value="1" />
+			<aut:param name="taskMaxDegreeOfParallelism" value="1" />
+			<aut:param name="paralFractionMin" value="1" />
+			<aut:param name="paralFractionMax" value="1" />
+			<aut:param name="taskMinDuration" value="0" />
+			<aut:param name="taskMaxDuration" value="144000" />
+			<aut:param name="taskMinRAM" value="0" />
+			<aut:param name="taskMaxRAM" value="512" />
+		<!--	<aut:param name="taskMinSize" value="0" />
+			<aut:param name="taskMaxSize" value="1000" />--><!--in Mb --> 
+		</aut:params>
+	</aut:node>
+	
+	<aut:node id="applicationLarge" handler="it.imtlucca.cloudyscience.applicationLayer.Application">
+		<aut:logger level="FINE" />
+		<aut:params>
+			<aut:param name="minDeadlineOffsetToDuration" value="0.4" /><!--no  -->
+			<aut:param name="maxDeadlineOffsetToDuration" value="0.4" />
+			<aut:param name="taskMinDegreeOfParallelism" value="1" />
+			<aut:param name="taskMaxDegreeOfParallelism" value="4" />
+			<aut:param name="paralFractionMin" value="1" />
+			<aut:param name="paralFractionMax" value="1" />
+			<aut:param name="taskMinDuration" value="360000" />
+			<aut:param name="taskMaxDuration" value="4320000" />
+			<aut:param name="taskMinRAM" value="1024" />
+			<aut:param name="taskMaxRAM" value="4096" />
+		<!--	<aut:param name="taskMinSize" value="0" />
+			<aut:param name="taskMaxSize" value="1000" />--><!--in Mb --> 
+		</aut:params>
+	</aut:node>
+
+
+	<!-- *** PROCESSES *** -->
+
+	<aut:process id="periodicBirth" handler="it.unipr.ce.dsg.deus.impl.process.RectangularPulsePeriodicProcess">
+		<aut:params>
+			<aut:param value="1015" name="startVtThreshold" />
+			<aut:param value="1515" name="stopVtThreshold" />
+			<aut:param value="1" name="period" /> 
+		</aut:params>
+		<aut:nodes>
+			<aut:reference id="scienceNode" />
+		</aut:nodes>
+		<aut:events>
+			<aut:reference id="birth" />
+		</aut:events>
+	</aut:process>
+	
+	<aut:process id="periodicDCBirth" handler="it.unipr.ce.dsg.deus.impl.process.RectangularPulsePeriodicProcess">
+		<aut:params>
+			<aut:param value="1" name="startVtThreshold"/>
+			<aut:param value="7" name="stopVtThreshold"/>
+			<aut:param value="1" name="period"/>
+		</aut:params>
+		<aut:nodes>
+			<aut:reference id="scienceDataCenter"/>
+		</aut:nodes>
+		<aut:events>
+			<aut:reference id="birthDC"/>
+		</aut:events>
+	</aut:process>
+	
+	<aut:process id="periodicStartup" handler="it.unipr.ce.dsg.deus.impl.process.RectangularPulsePeriodicProcess">
+		<aut:params>
+			<aut:param value="1" name="startVtThreshold"/>
+			<aut:param value="1000" name="stopVtThreshold"/>
+			<aut:param value="10" name="period"/>
+		</aut:params>
+		<aut:nodes>
+			<aut:reference id="scienceDataCenter" />
+		</aut:nodes>
+		<aut:events>
+		    <aut:reference id="checkStartup" />
+		</aut:events>
+	</aut:process>
+	
+	<aut:process id="periodicResourcePulse" handler="it.unipr.ce.dsg.deus.impl.process.RectangularPulsePeriodicProcess">
+		<aut:params>
+			<aut:param name="startVtThreshold" value="1016" />
+			<aut:param name="stopVtThreshold" value="2520000" />
+			<aut:param name="period" value="5000" /> 
+		</aut:params>
+		<aut:nodes>
+			<aut:reference id="scienceNode" />
+		</aut:nodes>
+		<aut:events>
+			<aut:reference id="periodicPulse" />
+		</aut:events>
+	</aut:process>
+
+
+	<aut:process id="periodicSmallAppBirth" handler="it.unipr.ce.dsg.deus.impl.process.RectangularPulsePoissonProcess">
+		<aut:params>
+			<aut:param name="startVtThreshold" value="12016" />
+			<aut:param name="stopVtThreshold" value="2520000" />
+			<aut:param name="meanArrival" value="20" /><!--100-->
+		</aut:params>
+		<aut:nodes>
+			<aut:reference id="applicationSmall" />
+		</aut:nodes>
+		<aut:events>
+			<aut:reference id="createAppSmall" />		
+		</aut:events>
+	</aut:process>
+	
+	<aut:process id="periodicLargeAppBirth" handler="it.unipr.ce.dsg.deus.impl.process.RectangularPulsePoissonProcess">
+		<aut:params>
+			<aut:param name="startVtThreshold" value="12016" />
+			<aut:param name="stopVtThreshold" value="2520000" />
+			<aut:param name="meanArrival" value="60" /><!--100-->
+		</aut:params>
+		<aut:nodes>
+			<aut:reference id="applicationLarge" />
+		</aut:nodes>
+		<aut:events>
+			<aut:reference id="createAppLarge" />		
+		</aut:events>
+	</aut:process>
+	
+	
+	<aut:process id="periodicVTLog" handler="it.unipr.ce.dsg.deus.impl.process.PeriodicProcess">
+		<aut:params>
+			<aut:param name="period" value="200000" /> 
+		</aut:params>
+		<aut:events>
+			<aut:reference id="logVirtualTime" />
+		</aut:events>
+	</aut:process> 
+		
+	<aut:process id="periodicLog" handler="it.unipr.ce.dsg.deus.impl.process.PeriodicProcess">
+		<aut:params>
+			<aut:param name="period" value="360000" /> 
+		</aut:params>
+		<aut:events>
+		    <!--<aut:reference id="logVirtualTime" />-->
+		    <!--<aut:reference id="logPhysicalNode" />
+		    <aut:reference id="logIaasDcNode" />
+		    <aut:reference id="logIaasNode" />-->
+		    <aut:reference id="logACaasNode" />
+		  <!--  <aut:reference id="logAntACaasNode" />-->
+		<!--    <aut:reference id="logAppNode" />-->
+	<!--		<aut:reference id="logCloudNetwork" />-->
+			<!--<aut:reference id="logAcoCloudNetwork" />-->
+		</aut:events>
+	</aut:process>
+
+		
+	<!-- *** SIMULATION *** -->
+<!--tolti 8640000 1 day 360k 1h 2520000=7h--> <!--360000 -->
+	<aut:engine maxvt="360000" seed="123456789" keyspacesize="1000000000"> 
+		<aut:logger level="ALL" />
+		<aut:processes>
+			<aut:reference id="periodicBirth" />
+			<aut:reference id="periodicDCBirth" />
+			<aut:reference id="periodicSmallAppBirth" />
+			<!--<aut:reference id="periodicLargeAppBirth" />-->
+		
+			<aut:reference id="periodicLog" />
+			<aut:reference id="periodicVTLog" /> 
+		</aut:processes>
+	</aut:engine>
+
+</aut:automator>
